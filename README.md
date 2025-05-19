@@ -18,3 +18,15 @@ sh patch.sh
 sh down.sh
 ```
 
+## Architecture
+### The architecture of TimesMR is as follows, including the ovreall architecture, the Multi-scale MLP module and Variable Correlation module. 
+<div align="center"> 
+  <img src="figure/architecture.png" alt="the architecture of TimesMR">
+</div>
+
+
+### The performance of TimesMR is as follows. We compare TimesMR with 15 baselines on 16 popular datasets. TimesMR can achieve consistent SOTA performance.
+<div align="center"> 
+  <img src="figure/performance.png" alt="the performance of TimesMR">
+</div>
+
