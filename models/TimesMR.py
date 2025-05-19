@@ -32,7 +32,7 @@ class RMSNorm(nn.Module):
     def __init__(self, normalized_shape, eps=1e-8):
         super(RMSNorm, self).__init__()
         self.eps = eps
-        self.scale = nn.Parameter(torch.ones(*normalized_shape))  # 可学习的缩放参数
+        self.scale = nn.Parameter(torch.ones(*normalized_shape))   
 
     def forward(self, x):
         rms = torch.sqrt(torch.mean(x**2, dim=(-2, -1), keepdim=True) + self.eps)
@@ -221,21 +221,21 @@ class ResBlock_RNN2(nn.Module):
 
         x = torch.cat((x, x[:,:,:(self.c_patch*self.n_patch-channel)]), dim=-1)
         x = x.reshape(batch, self.d_model, self.c_patch, self.n_patch)
-        kv = x
+        residual = x
         x = x.reshape(batch*self.n_patch, self.d_model, self.c_patch).permute(0,2,1)
-        x1, x2 = self.lstm(self.norm_lstm(x))
-        x1 = x1[:,:,:self.d_model] + x1[:,:,-self.d_model:]
-        x1 = self.lstm_linear(x1.permute(0,2,1))
-        x1 = x1.reshape(batch, self.d_model, self.c_patch, self.n_patch)
-        x2 = torch.sum(x2.permute(1,0,2), dim=1, keepdim=True).reshape(batch, self.n_patch, self.d_model)
-        x21, x22 = self.lstm2((x2)) 
-        x21 = x21[:,:,:self.d_model] + x21[:,:,-self.d_model:]
-        x21 = self.lstm_linear2(x21.permute(0,2,1)).unsqueeze(-2)
-        x = kv +  self.linear2(torch.mul(self.linear(kv), x1 + self.linear3(torch.mul(x21, x1) )) )
-        x = x.reshape(batch, self.d_model, self.c_patch*self.n_patch).contiguous()[:,:,:channel]
+        out1, intra = self.lstm(self.norm_lstm(x))
+        out1 = out1[:,:,:self.d_model] + out1[:,:,-self.d_model:]
+        out1 = self.lstm_linear(out1.permute(0,2,1))
+        out1 = out1.reshape(batch, self.d_model, self.c_patch, self.n_patch)
+        intra = torch.sum(intra.permute(1,0,2), dim=1, keepdim=True).reshape(batch, self.n_patch, self.d_model)
+        inter, x22 = self.lstm2(intra) 
+        inter = inter[:,:,:self.d_model] + inter[:,:,-self.d_model:]
+        inter = self.lstm_linear2(inter.permute(0,2,1)).unsqueeze(-2)
+        out = residual +  self.linear2(torch.mul(self.linear(residual), out1 + self.linear3(torch.mul(out1, inter) )) )
+        out = out.reshape(batch, self.d_model, self.c_patch*self.n_patch).contiguous()[:,:,:channel]
 
 
-        return x
+        return out
 
 
 
