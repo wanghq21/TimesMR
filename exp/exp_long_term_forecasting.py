@@ -15,111 +15,9 @@ from utils.augmentation import run_augmentation,run_augmentation_single
 
 warnings.filterwarnings('ignore')
 
-
-class SmoothL1Loss(nn.Module):
-    def __init__(self, reduction='mean', beta=1.0):
-        super(SmoothL1Loss, self).__init__()
-        self.beta = beta
-        self.reduction = reduction
-
-    def forward(self, input, target):
-        if not (target.size() == input.size()):
-            raise ValueError("Target size ({}) must be the same as input size ({})".format(target.size(), input.size()))
-
-        diff = torch.abs(input - target)
-        loss = torch.where(diff < self.beta, 0.5 * diff ** 2 / self.beta, diff - 0.5 * self.beta)
-
-        if self.reduction == 'none':
-            return loss
-        elif self.reduction == 'mean':
-            return loss.mean()
-        elif self.reduction == 'sum':
-            return loss.sum()
-        else:
-            raise ValueError("Invalid reduction mode: {}".format(self.reduction))
-
-
-
-class SmoothL1Loss2(nn.Module):
-    def __init__(self, reduction='mean', beta=1.0):
-        super(SmoothL1Loss2, self).__init__()
-        self.beta = beta
-        self.reduction = reduction
-
-    def forward(self, input, target):
-        if not (target.size() == input.size()):
-            raise ValueError("Target size ({}) must be the same as input size ({})".format(target.size(), input.size()))
-
-        diff = torch.abs(input - target)
-        loss = torch.where(diff < self.beta, 
-                           0.5 * diff ** 2 / self.beta, 
-                           torch.sqrt(diff + 1e-8) - math.sqrt(self.beta) + 0.5 * self.beta)
-                           
-        if self.reduction == 'none':
-            return loss
-        elif self.reduction == 'mean':
-            return loss.mean()
-        elif self.reduction == 'sum':
-            return loss.sum()
-        else:
-            raise ValueError("Invalid reduction mode: {}".format(self.reduction))
-
-
-
-
-class SmoothL1Loss3(nn.Module):
-    def __init__(self, reduction='mean', beta=1.0, beta1=3.0):
-        super(SmoothL1Loss3, self).__init__()
-        self.beta = beta
-        self.beta1 = beta1
-        self.reduction = reduction
-
-    def forward(self, input, target):
-        if not (target.size() == input.size()):
-            raise ValueError("Target size ({}) must be the same as input size ({})".format(target.size(), input.size()))
-
-        diff = torch.abs(input - target)
-        loss = torch.where(diff < self.beta, 
-                           0.5 * diff ** 2 / self.beta, 
-                           torch.where(diff < self.beta1,
-                           diff - 0.5 * self.beta, 
-                           torch.sqrt(diff + 1e-8) - math.sqrt(self.beta1) + 0.5 * self.beta1 - 0.5 * self.beta))
-              
-        if self.reduction == 'none':
-            return loss
-        elif self.reduction == 'mean':
-            return loss.mean()
-        elif self.reduction == 'sum':
-            return loss.sum()
-        else:
-            raise ValueError("Invalid reduction mode: {}".format(self.reduction))
-
-
-# class moving_avg(nn.Module):
-#     """
-#     Moving average block to highlight the trend of time series
-#     """
-
-#     def __init__(self, kernel_size, stride):
-#         super(moving_avg, self).__init__()
-#         self.kernel_size = kernel_size
-#         self.avg = nn.AvgPool1d(kernel_size=kernel_size, stride=stride, padding=0)
-
-#     def forward(self, x):
-#         # padding on the both ends of time series
-#         front = x[:, 0:1, :].repeat(1, (self.kernel_size - 1) // 2, 1)
-#         end = x[:, -1:, :].repeat(1, (self.kernel_size - 1) // 2, 1)
-#         x = torch.cat([front, x, end], dim=1)
-#         x = self.avg(x.permute(0, 2, 1))
-#         x = x.permute(0, 2, 1)
-#         return x
-
-
-
 class Exp_Long_Term_Forecast(Exp_Basic):
     def __init__(self, args):
         super(Exp_Long_Term_Forecast, self).__init__(args)
-        # self.mov = moving_avg(kernel_size=3,stride=1)
 
     def _build_model(self):
         model = self.model_dict[self.args.model].Model(self.args).float()
@@ -138,17 +36,9 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
     def _select_criterion(self):
         criterion = nn.MSELoss()
-        # criterion = nn.L1Loss()
-        # criterion = torch.nn.SmoothL1Loss()
         return criterion
 
-    def _select_criterion_train(self):
-        criterion = nn.MSELoss()
-        # criterion = nn.L1Loss()
-        # criterion = SmoothL1Loss(beta=0.1)
-        # criterion = SmoothL1Loss2(beta=0.1)
-        # criterion = SmoothL1Loss3(beta=0.1, beta1=1)
-        return criterion
+
 
     def vali(self, vali_data, vali_loader, criterion):
         total_loss = []
@@ -218,7 +108,6 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
-        criterion_train = self._select_criterion_train()
 
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
@@ -275,10 +164,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     f_dim = -1 if self.args.features == 'MS' else 0
                     outputs = outputs[:, -self.args.pred_len:, f_dim:]
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-                    # batch_y = self.mov(batch_y)
-                    # batch_y = torch.cat((ba tch_x, batch_y),dim=-2)
-                    loss = criterion_train(outputs, batch_y)  
-                    # loss = torch.sqrt(loss)
+                    loss = criterion(outputs, batch_y)  
                     train_loss.append(loss.item())
 
                 if (i + 1) % 100 == 0:
