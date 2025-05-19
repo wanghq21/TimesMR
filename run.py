@@ -13,7 +13,7 @@ if __name__ == '__main__':
     torch.manual_seed(fix_seed)
     np.random.seed(fix_seed)
 
-    parser = argparse.ArgumentParser(description='TimesNet')
+    parser = argparse.ArgumentParser(description='TimesMR')
 
     # basic config
     parser.add_argument('--task_name', type=str, required=True, default='long_term_forecast',
@@ -71,19 +71,8 @@ if __name__ == '__main__':
     parser.add_argument('--output_attention', action='store_true', help='whether to output attention in ecoder')
     parser.add_argument('--use_norm', type=int, default=1, help='whether to use normalize; True 1 False 0')
      
-    
-    # New attention
-    parser.add_argument('--alpha1', type=int, default=3, help='attention of temporal')
-    parser.add_argument('--alpha2', type=int, default=3, help='attention of channel')
-    
-    # SparseTSF
-    parser.add_argument('--period_len', type=int, default=12, help='period length of SparseTSF')    
-    
-    # FITS
-    parser.add_argument('--cut_freq', type=int, default=0, help='cut_freq of FITS')    
-    
+
     # DLinear
-    # parser.add_argument('--individual', action='store_true', default=False, help='DLinear: a linear layer for each variate(channel) individually')
     parser.add_argument('--moving_avg', type=int, default=25, help='window size of moving average')
     
     # NonTransformer
@@ -102,13 +91,10 @@ if __name__ == '__main__':
     parser.add_argument('--decomp_method', type=str, default='moving_avg',
                         help='method of series decompsition, only support moving_avg or dft_decomp')
 
-    # SimpleTSF
-    parser.add_argument('--channel_function', type=str, default='RNN', help='variable correlation method')
+    # TimesMR
     parser.add_argument('--temporal_function', type=str, default='patch', help='temporal dependency method')
-    parser.add_argument('--d2', type=float, default=0.1, help='dropout of rnn')
     parser.add_argument('--patch', type=int, nargs='+', default=[1,4,12,24], help='patch')  
     parser.add_argument('--n_patch', type=int, default=-1, help='patch')  
-    parser.add_argument('--rnn_ablation', type=bool, default=True, help='rnn ablation')
     parser.add_argument('--down_method', type=str, default='avg',
                         help='down sampling method, only support avg, max, conv')
 
