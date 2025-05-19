@@ -228,7 +228,7 @@ class ResBlock_RNN2(nn.Module):
         out1 = self.lstm_linear(out1.permute(0,2,1))
         out1 = out1.reshape(batch, self.d_model, self.c_patch, self.n_patch)
         intra = torch.sum(intra.permute(1,0,2), dim=1, keepdim=True).reshape(batch, self.n_patch, self.d_model)
-        inter, x22 = self.lstm2(intra) 
+        inter, h = self.lstm2(intra) 
         inter = inter[:,:,:self.d_model] + inter[:,:,-self.d_model:]
         inter = self.lstm_linear2(inter.permute(0,2,1)).unsqueeze(-2)
         out = residual +  self.linear2(torch.mul(self.linear(residual), out1 + self.linear3(torch.mul(out1, inter) )) )
