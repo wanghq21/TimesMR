@@ -93,8 +93,8 @@ if __name__ == '__main__':
 
     # TimesMR
     parser.add_argument('--temporal_function', type=str, default='patch', help='temporal dependency method')
-    parser.add_argument('--patch', type=int, nargs='+', default=[1,4,12,24], help='patch')  
-    parser.add_argument('--n_patch', type=int, default=-1, help='patch')  
+    parser.add_argument('--patch', type=int, nargs='+', default=[1,4,12,24], help='patch size')  
+    parser.add_argument('--n_patch', type=int, default=-1, help='number of variable groups')  
     parser.add_argument('--down_method', type=str, default='avg',
                         help='down sampling method, only support avg, max, conv')
 
