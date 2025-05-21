@@ -1,15 +1,16 @@
 # TimesMR
 Code release of paper "TimesMR: Unlocking the Potential of MLP and RNNs for Multivariate Time Series Forecasting"
 
-## 1 Get Started
+## Get Started
 
-1.1 Install Python 3.8
+1. Install Python 3.8
 ```
 pip install -r requirements.txt
 ```
 
-1.2 Data. All benchmark datasets can be obtained from [Google Drive](https://drive.google.com/drive/folders/13Cg1KYOlzM5C7K8gK8NfC-F3EYxkM3D2). All datasets should be placed under folder `./dataset`, such as `./dataset/electricity/electricity.csv`.
-1.3 You can reproduce the experiment results as the following examples
+2. Data. All benchmark datasets can be obtained from [Google Drive](https://drive.google.com/drive/folders/13Cg1KYOlzM5C7K8gK8NfC-F3EYxkM3D2). All datasets should be placed under folder `./dataset`, such as `./dataset/electricity/electricity.csv`.
+
+3. You can reproduce the experiment results as the following examples
 ```
 # TimesMR/patch
 sh patch.sh
@@ -18,15 +19,27 @@ sh patch.sh
 sh down.sh
 ```
 
-## 2 Architecture
-### 2.1 The architecture of TimesMR is as follows, including the ovreall architecture, the Multi-scale MLP module and Variable Correlation module. 
+## Architecture
+The architecture of TimesMR is as follows, including the ovreall architecture, the Multi-scale MLP module to capture temporal dependency and Variable Correlation module to explore the variable relationship. 
 <div align="center"> 
   <img src="figure/architecture.png" alt="the architecture of TimesMR", width="70%">
 </div>
 
-
-### 2.2 The performance of TimesMR is as follows. We compare TimesMR with 15 baselines on 16 popular datasets. TimesMR can achieve consistent SOTA performance.
+## Experiments
+### Main results
+The performance of TimesMR is as follows. We compare TimesMR with 15 baselines on 16 popular datasets. TimesMR can achieve consistent SOTA performance.
 <div align="center"> 
   <img src="figure/performance.png" alt="the performance of TimesMR", width="70%">
 </div>
 
+### Analysis of Multi-scale MLP module
+We integrate our Multi-scale MLP module into other models and report their performance. The results demonstrate that both the Patch and Down modules significantly enhance the performance of all selected models.
+<div align="center"> 
+  <img src="figure/multiscale mlp.png" alt="the performance of TimesMR", width="70%">
+</div>
+
+### Analysis of Variable Correlation module
+We integrate our Variable Correlation (Grouped BiRNN) module into other models and report their performance. The results highlight the versatility of Grouped BiRNN as a plug-and-play module that effectively facilitates information exchange among variables, thereby enhancing their representations.
+<div align="center"> 
+  <img src="figure/GBiRNN.png" alt="the performance of TimesMR", width="70%">
+</div>
