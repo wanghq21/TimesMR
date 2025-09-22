@@ -1,0 +1,140 @@
+export CUDA_VISIBLE_DEVICES=0
+model_name=TimesMR
+temporal_function='down'
+
+
+python3 -u run.py \
+    --task_name long_term_forecast \
+    --is_training 1 \
+    --root_path ./dataset/traffic \
+    --data_path traffic.csv \
+    --model_id traffic_96_96 \
+    --model $model_name \
+    --data custom \
+    --features M \
+    --freq h \
+    --seq_len 96 \
+    --label_len 96 \
+    --pred_len 96 \
+    --patch 1  4 12 24 \
+    --e_layers 4 \
+    --d_layers 1 \
+    --factor 3 \
+    --dropout 0.1 \
+    --temporal_function $temporal_function\
+    --d_model 512 \
+    --d_ff 2048 \
+    --learning_rate 0.001 \
+    --n_patch 5 \
+    --enc_in 862 \
+    --dec_in 862 \
+    --c_out 862 \
+    --des 'Exp' \
+    --lradj type1 \
+    --train_epochs 15 \
+    --patience 5 \
+    --batch_size 32 \
+    --itr 1 \
+    --use_norm 1
+
+python3 -u run.py \
+    --task_name long_term_forecast \
+    --is_training 1 \
+    --root_path ./dataset/traffic \
+    --data_path traffic.csv \
+    --model_id traffic_96_96 \
+    --model $model_name \
+    --data custom \
+    --features M \
+    --freq h \
+    --seq_len 96 \
+    --label_len 96 \
+    --pred_len 192 \
+    --patch 1  4 12 24 \
+    --e_layers 4 \
+    --d_layers 1 \
+    --factor 3 \
+    --dropout 0.1 \
+    --temporal_function $temporal_function\
+    --d_model 512 \
+    --d_ff 2048 \
+    --learning_rate 0.001 \
+    --n_patch 5 \
+    --enc_in 862 \
+    --dec_in 862 \
+    --c_out 862 \
+    --des 'Exp' \
+    --lradj type1 \
+    --train_epochs 15 \
+    --patience 5 \
+    --batch_size 32 \
+    --itr 1 \
+    --use_norm 1
+
+python3 -u run.py \
+    --task_name long_term_forecast \
+    --is_training 1 \
+    --root_path ./dataset/traffic \
+    --data_path traffic.csv \
+    --model_id traffic_96_96 \
+    --model $model_name \
+    --data custom \
+    --features M \
+    --freq h \
+    --seq_len 96 \
+    --label_len 96 \
+    --pred_len 336 \
+    --patch 1  4 12 24 \
+    --e_layers 4 \
+    --d_layers 1 \
+    --factor 3 \
+    --dropout 0.1 \
+    --temporal_function $temporal_function\
+    --d_model 512 \
+    --d_ff 2048 \
+    --learning_rate 0.001 \
+    --n_patch 5 \
+    --enc_in 862 \
+    --dec_in 862 \
+    --c_out 862 \
+    --des 'Exp' \
+    --lradj type1 \
+    --train_epochs 15 \
+    --patience 5 \
+    --batch_size 32 \
+    --itr 1 \
+    --use_norm 1
+
+python3 -u run.py \
+    --task_name long_term_forecast \
+    --is_training 1 \
+    --root_path ./dataset/traffic \
+    --data_path traffic.csv \
+    --model_id traffic_96_96 \
+    --model $model_name \
+    --data custom \
+    --features M \
+    --freq h \
+    --seq_len 96 \
+    --label_len 96 \
+    --pred_len 720 \
+    --patch 1  4 12 24 \
+    --e_layers 4 \
+    --d_layers 1 \
+    --factor 3 \
+    --dropout 0.1 \
+    --temporal_function $temporal_function\
+    --d_model 512 \
+    --d_ff 2048 \
+    --learning_rate 0.001 \
+    --n_patch 5 \
+    --enc_in 862 \
+    --dec_in 862 \
+    --c_out 862 \
+    --des 'Exp' \
+    --lradj type1 \
+    --train_epochs 15 \
+    --patience 5 \
+    --batch_size 32 \
+    --itr 1 \
+    --use_norm 1
