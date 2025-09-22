@@ -85,10 +85,6 @@ class Multiscale_MLP(nn.Module):
             self.mlp = torch.nn.ModuleList([MLP_block(dim1=self.enc_in, dim2=self.seq_len//self.kernel[i], d_model=configs.d_model, d_out=configs.seq_len, dropout=configs.dropout)
                 for i in range(self.layers)])
 
-            self.rnn_ffn = MLP_block(dim1=self.enc_in, dim2=self.seq_len, d_model=configs.d_model, d_out=self.seq_len, dropout=configs.dropout)
-
-
-
         if self.temporal_function == 'patch':
             self.core = 64
             self.patch = configs.patch
@@ -109,13 +105,17 @@ class Multiscale_MLP(nn.Module):
             self.s_inter = torch.nn.ModuleList([
                 MLP_block(dim1=self.patch[i], dim2=self.patch_num[i], d_model=self.core, d_out=self.patch_num[i], dropout=configs.dropout)
                 for i in range(len(self.patch))])
+            
+            self.patch_linear = torch.nn.ModuleList([
+                torch.nn.Conv1d(in_channels=self.seq_len, out_channels=self.seq_len,
+                        kernel_size=1,stride=1,padding=0,groups=1)
+                for i in range(len(self.patch))])
 
-            self.rnn_ffn = MLP_block(dim1=self.enc_in, dim2=configs.seq_len, d_model=configs.d_model, d_out=configs.seq_len, dropout=configs.dropout)
         
         self.linear = torch.nn.Conv1d(in_channels=configs.seq_len, out_channels=configs.d_model,
                         kernel_size=1,stride=1,padding=0,groups=1)
 
-    def forward(self, x, x_mark_enc):
+    def forward(self, x):
 
         B, L, C = x.shape
         if self.temporal_function == 'patch':
@@ -137,8 +137,8 @@ class Multiscale_MLP(nn.Module):
                     season = season.permute(0,1,3,2)
                     season = season + self.s_inter[i](season)
                     season = season.permute(0,1,3,2).reshape(B, C, -1).permute(0,2,1)
-                    add = add +  (x_group + season)
-            x =  x + self.rnn_ffn(add.permute(0,2,1)).permute(0,2,1)
+                    add = add +  self.patch_linear[i](x_group + season)
+            x =  x + add
 
         if self.temporal_function == 'down':
             add = torch.zeros([B, C, L], device=x.device)
@@ -149,7 +149,7 @@ class Multiscale_MLP(nn.Module):
                 else:
                     tmp = torch.nn.AvgPool1d(kernel_size=self.kernel[i])(tmp) + torch.nn.MaxPool1d(kernel_size=self.kernel[i])(tmp)
                 add = add + self.mlp[i](tmp) 
-            x = x + self.rnn_ffn(add).permute(0,2,1)
+            x = x + add.permute(0,2,1)
         
         x = self.linear(x)
         
@@ -157,9 +157,9 @@ class Multiscale_MLP(nn.Module):
 
 
 
-class ResBlock_RNN2(nn.Module):
+class ResBlock_RNN_group(nn.Module):
     def __init__(self, configs, seq_len=96, groups=1):
-        super(ResBlock_RNN2, self).__init__()
+        super(ResBlock_RNN_group, self).__init__()
         self.d_model = configs.d_model
 
         if configs.freq == 't':
@@ -195,14 +195,14 @@ class ResBlock_RNN2(nn.Module):
         )
 
         self.norm_lstm = torch.nn.LayerNorm(self.d_model)
-        self.lstm = torch.nn.GRU(input_size=self.d_model,hidden_size=self.d_model,
+        self.lstm = torch.nn.LSTM(input_size=self.d_model,hidden_size=self.d_model,
                                 num_layers=1,batch_first=True, bidirectional=True)
         self.lstm_linear = nn.Sequential( 
             nn.SiLU(),
             nn.Dropout(configs.dropout), 
         )
 
-        self.lstm2 = torch.nn.GRU(input_size=self.d_model, hidden_size=self.d_model,
+        self.lstm2 = torch.nn.LSTM(input_size=self.d_model, hidden_size=self.d_model,
                                 num_layers=1,batch_first=True, bidirectional=True)
         self.lstm_linear2 = nn.Sequential( 
             nn.SiLU(),
@@ -227,7 +227,7 @@ class ResBlock_RNN2(nn.Module):
         out1 = out1[:,:,:self.d_model] + out1[:,:,-self.d_model:]
         out1 = self.lstm_linear(out1.permute(0,2,1))
         out1 = out1.reshape(batch, self.d_model, self.c_patch, self.n_patch)
-        intra = torch.sum(intra.permute(1,0,2), dim=1, keepdim=True).reshape(batch, self.n_patch, self.d_model)
+        intra = torch.sum(intra[0].permute(1,0,2), dim=1, keepdim=True).reshape(batch, self.n_patch, self.d_model)
         inter, h = self.lstm2(intra) 
         inter = inter[:,:,:self.d_model] + inter[:,:,-self.d_model:]
         inter = self.lstm_linear2(inter.permute(0,2,1)).unsqueeze(-2)
@@ -238,7 +238,60 @@ class ResBlock_RNN2(nn.Module):
         return out
 
 
+# class ResBlock_RNN(nn.Module):
+#     def __init__(self, configs, seq_len=96, groups=1):
+#         super(ResBlock_RNN, self).__init__()
+#         self.d_model = configs.d_model
 
+#         if configs.freq == 't':
+#             if configs.n_patch == -1:
+#                 self.n_patch = int(math.sqrt(configs.enc_in+5)) 
+#             else:
+#                 self.n_patch = configs.n_patch
+#             self.c_patch = (configs.enc_in+5) // self.n_patch + 1
+#         elif configs.freq == 'h':
+#             if configs.n_patch == -1:
+#                 self.n_patch = int(math.sqrt(configs.enc_in+4)) 
+#             else:
+#                 self.n_patch = configs.n_patch
+#             self.c_patch = (configs.enc_in+4) // self.n_patch + 1
+#         elif configs.freq == 'd':
+#             if configs.n_patch == -1:
+#                 self.n_patch = int(math.sqrt(configs.enc_in+3)) 
+#             else:
+#                 self.n_patch = configs.n_patch
+#             self.c_patch = (configs.enc_in+3) // self.n_patch + 1
+#         else:
+#             if configs.n_patch == -1:
+#                 self.n_patch = int(math.sqrt(configs.enc_in)) 
+#             else:
+#                 self.n_patch = configs.n_patch
+#             self.c_patch = configs.enc_in // self.n_patch + 1
+
+#         self.linear = nn.Sequential(
+#             torch.nn.Conv1d(in_channels=self.d_model, out_channels=self.d_model,
+#                     kernel_size=1,stride=1,padding=0),
+#             # torch.nn.SiLU(),
+#             # torch.nn.Dropout(configs.dropout),
+#         )
+
+#         self.norm_lstm = torch.nn.LayerNorm(self.d_model)
+#         self.lstm = torch.nn.GRU(input_size=self.d_model,hidden_size=self.d_model,
+#                                 num_layers=1,batch_first=True, bidirectional=True)
+#         self.lstm_linear = nn.Sequential( 
+#             nn.SiLU(),
+#             nn.Dropout(configs.dropout), 
+#         )
+
+#     def forward(self, x):
+#         batch, seq, channel = x.shape
+
+#         out, hidden = self.lstm(self.norm_lstm(x.permute(0,2,1))) 
+#         out = out[:,:,:self.d_model] + out[:,:,-self.d_model:]
+#         out = x + self.linear(torch.mul(self.lstm_linear(out.permute(0,2,1)), x))
+
+
+#         return out
 
 
 class Model(nn.Module):
@@ -257,7 +310,7 @@ class Model(nn.Module):
         self.linear_trans = nn.Linear(configs.seq_len, configs.d_model)
 
         self.multiscale_mlp = Multiscale_MLP(configs)
-        self.model = nn.ModuleList([ResBlock_RNN2(configs, seq_len=self.seq_len, groups=configs.d_model // int(math.pow(2,i)))
+        self.model = nn.ModuleList([ResBlock_RNN_group(configs, seq_len=self.seq_len, groups=configs.d_model // int(math.pow(2,i)))
                                     for i in range(configs.e_layers)])
 
         self.projection = nn.Linear(configs.d_model, configs.pred_len)
@@ -275,7 +328,7 @@ class Model(nn.Module):
             stdev = torch.sqrt(torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5)
             x_enc /= stdev
 
-        x_enc = self.multiscale_mlp(x_enc, x_mark_enc)
+        x_enc = self.multiscale_mlp(x_enc)
         
         for i in range(self.layer):
             x_enc = self.model[i](x_enc)
