@@ -12,11 +12,11 @@ pip install -r requirements.txt
 
 3. You can reproduce the experiment results as the following examples
 ```
-# TimesMR/patch
-sh patch.sh
+# TimesMR/patch on ECL dataset
+sh scripts/patch/ECL.sh
 
-# TimesMR/down
-sh down.sh
+# TimesMR/down on ECL dataset
+sh scripts/down/ECL.sh
 ```
 
 ## Architecture
