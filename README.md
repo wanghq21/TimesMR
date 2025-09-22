@@ -29,7 +29,10 @@ The architecture of TimesMR is as follows, including the ovreall architecture, t
 ### Main results
 The performance of TimesMR is as follows. We compare TimesMR with 15 baselines on 16 popular datasets. TimesMR can achieve consistent SOTA performance.
 <div align="center"> 
-  <img src="figure/performance.png" alt="the performance of TimesMR", width="70%">
+  <img src="figure/result1.png" alt="the performance of TimesMR", width="70%">
+</div>
+<div align="center"> 
+  <img src="figure/result2.png" alt="the performance of TimesMR", width="70%">
 </div>
 
 ### Analysis of Multi-scale MLP module
